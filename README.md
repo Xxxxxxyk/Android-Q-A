@@ -1,5 +1,66 @@
 # Android-Q-A
 
+## 目录
+
+- [last update 2024.04.09]
+  - [Java基础](#Java基础)
+    - [Q: Java中 == 和 equals的区别是什么? ](#Q-Java中--和-equals的区别是什么-)
+    - [Q: 以下代码的输出结果是什么, 为什么? ](#Q-以下代码的输出结果是什么-为什么-)
+      - [A: 会输出true, true, false, false ](#A-会输出true-true-false-false-)
+    - [Q: int和Integer的区别](#Q-int和Integer的区别)
+    - [Q: String, StringBuffer, StringBuilder的区别](#Q-String-StringBuffer-StringBuilder的区别)
+    - [Q: 什么是堆, 什么是栈 , 有什么区别?](#Q-什么是堆-什么是栈--有什么区别)
+    - [A: 堆栈:](#A-堆栈)
+    - [Q: 什么是内存泄漏, 内存溢出, 内存抖动](#Q-什么是内存泄漏-内存溢出-内存抖动)
+    - [A:](#A)
+    - [Q: GC的运行原理](#Q-GC的运行原理)
+    - [A: ](#A-)
+  - [Android](#Android)
+  - [Q: Activity, Fragment, Service的生命周期都是什么?](#Q-Activity-Fragment-Service的生命周期都是什么)
+    - [在正常情况下:](#在正常情况下)
+    - [进入后台后:](#进入后台后)
+    - [由后台再进入前台:](#由后台再进入前台)
+    - [低内存情况下页面被回收](#低内存情况下页面被回收)
+    - [受启动模式影响:](#受启动模式影响)
+    - [Fragment的生命周期:](#Fragment的生命周期)
+    - [onAttach和onDetach:](#onAttach和onDetach)
+    - [onCreateView和onDestroyView](#onCreateView和onDestroyView)
+    - [onActivityCreated(已过时)](#onActivityCreated已过时)
+    - [Q:Activity的启动模式](#QActivity的启动模式)
+    - [A:Activity的启动模式分为5种](#AActivity的启动模式分为5种)
+      - [standard](#standard)
+      - [singleTop](#singleTop)
+      - [singleTask](#singleTask)
+      - [singleInstance](#singleInstance)
+      - [singleInstancePerTask](#singleInstancePerTask)
+    - [Q: JetPack全家桶都是什么, 都有什么作用](#Q-JetPack全家桶都是什么-都有什么作用)
+    - [A: JetPack包括 :](#A-JetPack包括-)
+    - [Q: 讲解一下Android的事件分发机制](#Q-讲解一下Android的事件分发机制)
+    - [A: 事件分发机制](#A-事件分发机制)
+    - [Q: MotionEvent是什么, 它和GestureDetector有什么区别?](#Q-MotionEvent是什么-它和GestureDetector有什么区别)
+    - [A: MotionEvent和GestureDetector: ](#A-MotionEvent和GestureDetector-)
+    - [Q: 事件冲突的解决方案:](#Q-事件冲突的解决方案)
+    - [A: 解决方案:](#A-解决方案)
+  - [Flutter](#Flutter)
+    - [Q: Flutter的生命周期](#Q-Flutter的生命周期)
+    - [A: Flutter的生命周期](#A-Flutter的生命周期)
+      - [StatelessWidget](#StatelessWidget)
+      - [StatefulWidget](#StatefulWidget)
+      - [APP的生命周期](#APP的生命周期)
+      - [WidgetsBindingObserver](#WidgetsBindingObserver)
+      - [AppLifecycleListener](#AppLifecycleListener)
+    - [Q: Flutter与原生怎么通信](#Q-Flutter与原生怎么通信)
+    - [A: 通信方式](#A-通信方式)
+      - [MethodChannel](#MethodChannel)
+  - [鸿蒙](#鸿蒙)
+    - [Q:Ability, page的生命周期都是什么](#QAbility-page的生命周期都是什么)
+    - [A: 生命周期](#A-生命周期)
+      - [Ability:](#Ability)
+      - [page:](#page)
+  - [设计模式](#设计模式)
+    - [Q:什么是单例设计模式, 它有什么优缺点](#Q什么是单例设计模式-它有什么优缺点)
+    - [A:单例设计模式](#A单例设计模式)
+
 Android的面试题整理
 
 # last update 2024.04.08
@@ -42,6 +103,20 @@ A: Integer是int的包装类, JDK1.5引入了自动拆箱/装箱的概念, 两�
 A: String是字符串常量, 拼接时是不同的两个空间, StringBuffer和StringBuilder是字符串变量, 拼接时直接append在字符串的后边, StringBuff是线程安全的, 执行效率低, StringBuilder是线程不安全的, 执行效率高.
 
 ### Q: 什么是堆, 什么是栈 , 有什么区别?
+
+### A: 堆栈:
+
+栈: 一种后进先出的数据结构, 用于存储变量和方法调用的上下文, 在android中是由编译器自动管理的, 通常不需要操作栈内存.  它的特点是速度快, 由操作系统管理, 当函数或者方法执行完毕之后, 栈帧会自动弹出, 释放内存. 栈上数据在函数调用期内存在, 函数返回数据后即被销毁. 每个线程有自己的栈, 栈的大小是有限的, 如果局部变量过多或递归较深, 会导致栈溢出 Stack Overflow
+
+堆: 一种用于动态内存分配的内存区域, 可以在程序运行时手动申请和释放内存, 堆内存通过垃圾回收机制来回收不再使用的对象. 它的特点是大小不固定, 可以根据需要动态的分配和释放. 并且需要手动管理, 在调用时通过new来申请内存, 在不需要的时候调用release释放, 或者依靠垃圾回收机制回收. 当对象在堆上被分配之后, 它的生命周期不会因为函数的调用而立刻结束, 只有当垃圾回收机制确认没有引用指向该对象时, 才会回收其占用的内存.
+
+### Q: 什么是内存泄漏, 内存溢出, 内存抖动
+
+### A:
+
+### Q: GC的运行原理
+
+### A:&#x20;
 
 ## Android
 
@@ -121,7 +196,9 @@ A1 → A2 → A3 → A2 → A3   栈1: A3 → A2   栈2: A3 → A1
 
 ### Q: JetPack全家桶都是什么, 都有什么作用
 
-A: JetPack包括 架构, 基础, 行为和UI, 旨让开发者更轻松的编写优质应用, 摆脱样板代码, 简化复杂任务, 把精力更好的放在业务逻辑中.
+### A: JetPack包括 :
+
+架构, 基础, 行为和UI, 旨让开发者更轻松的编写优质应用, 摆脱样板代码, 简化复杂任务, 把精力更好的放在业务逻辑中.
 
 其中架构包括: viewModel数据模型, Room数据库, Lifecycles生命周期管理, Livedata数据通知更改, Paging加载数据源, WorkManager后台管理, Navigation导航
 
@@ -130,6 +207,26 @@ A: JetPack包括 架构, 基础, 行为和UI, 旨让开发者更轻松的编写�
 行为包括: CameraX相机管理, DownloadManager下载器, Media媒体, Notifications通知, Permission权限, Sharing共享, Slices切片器
 
 UI包括: Fragment, Animation动画, Layout布局, Emoji表情, Palette调色板&#x20;
+
+### Q: 讲解一下Android的事件分发机制
+
+### A: 事件分发机制
+
+android的事件分发机制是一个标准的责任链模式的实现, 它的核心主要有三个方法: dispatchTouchEvent, onInterceptTouchEvent onTouchEvent 事件从触摸屏幕的一刻开始, 生成一个MotionEvent事件, 这个事件从Activity传递到Window再传递到ViewGroup再传递到VIew, 这三个方法主要的作用是 dispatchTouchEvent决定了事件下一级要传递给谁, onInterceptTouchEvent决定了要不要处理事件, viewGroup特有,onTouchEvent决定了事件的响应, 事件分发过程中, 由顶层的activity开始分发, 然后逐级传递给目标viewgroup, 直到找到处理该事件的view为止, 在分发过程中, 如果某个viewgroup拦截了事件, 事件就不会再向下传递给子view, 而是由viewgroup自己处理或分发给父view,  当事件到达目标view时, 会调用view的onTouchEvent方法来处理事件, 如果事件处理, 则分发结束, 如果事件不处理, 则向上返回, 由父view处理.
+
+### Q: MotionEvent是什么, 它和GestureDetector有什么区别?
+
+### A: MotionEvent和GestureDetector:&#x20;
+
+MotionEvent是android用来描述触摸事件的类, 它包含用户点击的位置, 点击的时间, 点击的操作(按下, 抬起, 拖动等).
+
+GestureDetector是android用来描述手势的类, 它提供了便携的手势识别的功能, 比如单击, 双击
+
+### Q: 事件冲突的解决方案:
+
+### A: 解决方案:
+
+通常分为滑动方向一致的冲突和滑动方向不一致的冲突, 滑动方向不一致的冲突, 通过判断滑动方向, 来决定哪个view进行拦截, 滑动方向一致的冲突, 可以通过内部拦截或外部拦截的处理方式, 内部拦截, 事件交给子view处理, 重写子view的dispatchTouchEvent方法或者onTouchEvent方法, 结合父view的requestDisallowTouchEvent方法, 需要处理就消费事件, 不需要就交给父view 外部拦截:重写父布局的onInterceptTouchEvent方法,根据条件判断什么时候拦截
 
 ## Flutter
 
