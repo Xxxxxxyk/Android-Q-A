@@ -2,7 +2,7 @@
 
 ## 目录
 
-- [last update 2024.04.10](#last-update-20240410)
+- [last update 2024.04.11](#last-update-20240411)
   - [Java基础](#Java基础)
     - [Q: Java中 == 和 equals的区别是什么? ](#Q-Java中--和-equals的区别是什么-)
     - [Q: 以下代码的输出结果是什么, 为什么? ](#Q-以下代码的输出结果是什么-为什么-)
@@ -36,6 +36,8 @@
     - [Q: Service的生命周期和启动模式](#Q-Service的生命周期和启动模式)
     - [Q: Android系统结构的原理和各版本的特性及适配](#Q-Android系统结构的原理和各版本的特性及适配)
     - [Q: MVC MVP MVVM的区别](#Q-MVC-MVP-MVVM的区别)
+    - [Q: AndroidThread是什么](#Q-AndroidThread是什么)
+    - [Q: View的绘制流程](#Q-View的绘制流程)
   - [Flutter](#Flutter)
     - [Q: Flutter的生命周期](#Q-Flutter的生命周期)
       - [StatelessWidget](#StatelessWidget)
@@ -61,7 +63,7 @@
 
 Android的面试题整理
 
-# last update 2024.04.10
+# last update 2024.04.11
 
 立个flag , 每天至少更新一道已经理解的面试题, 直到跳槽完成
 
@@ -272,6 +274,32 @@ A: MVC model view和 controller , controller持有view和model, view也持有mod
 MVP model view和presenter, view抽出和用户交互的接口, 逻辑写在presenter, presenter持有view和model, 将数据更新通过接口反应给view, 这种模式会导致需要大量的接口和抽象类
 
 MVVM model view和viewmodel, viewmodel中与view双向绑定, 通过databinding, 在数据变化时驱动UI更新. &#x20;
+
+### Q: AndroidThread是什么
+
+### Q: View的绘制流程
+
+A: &#x20;
+
+View的绘制流程主要经过了几大步
+
+1. 启动activity
+
+   activity的启动分为两种, 应用内启动和Launcher启动, 当启动一个activity时, 会将请求发送给AMS, AMS会判断目标进程存不存在, 如果不存在则发消息给zygote进程, 从zygote进程fork出目标进程, 进程启动后会调用ActivityThread.main方法, 然后发消息给AMS, 告诉AMS目标进程已启动, 然后AMS调用bindAppcation, 然后调用scheduleTransaction, 启动对应activity.
+2. 创建PhoneWindow
+
+   在activity启动后, 会调用attach方法, attach方法初始化了Window, 实际初始化的是Window的子类PhoneWindow, 这个时候PhoneWindow创建完成, 调用activity的onCreate方法
+3. 设置布局setContentView, 将xml布局转化为view&#x20;
+
+   在activity启动, 调用完成onCreate方法后, 一般会在onCreate中初始化布局, 调用setContentView, setContentView首先调用的AppCompatActivity的setContentView, 在AppCompatActivity中又调用了getDelegate的setContentView, 而getDelegate实际调用的是AppCompatDelegate.create生成的AppCompatDelegateImpl, 在这里执行了LayoutInflater.from(mContext).inflate(resId, contentParent);  这里通过inflate方法, 运用反射, 将标签名转化成view, 将属性转成AttributeSet, 然后生成view对象
+4. 添加布局转化后的view到android.R.id.content中, 这个时候view添加到window中, 开始绘制view本身
+
+   在布局转化为view对象前, AppCompatDelegateImpl中会调用ensureSubDecor方法, 这个方法在第一次调用时, 调用了createSubDecor, 而createSubDecor中又调用了window的setContentView方法, 根据activity的源码可知, getWindow实际是PhoneWindow对象, 而PhoneWindow的setContentView中, 第一次调用时, 因为contentParent是null, 调用installDecor, 然后调用generateDecor方法, 根据features来确定layoutResources, 生成DecorView, 此时有了android.R.id.content, 它的本质是一个FrameLayout, 这时把setContent中的layout布局添加到这个FreamLayout中, 这个时候绘制还没开始, 真正的绘制要在onResume方法走完之后, 在ActivityThread的handleResumeActivity方法里, 执行了activity的onResume之后, 执行了wm.addView方法, 这个wm实际是activity的getWindowmanager方法, 根据activity的源码可知, 实际是WindowManagerImpl的实例,  调用的它的addView, 而它的addView又进而执行了WindowManagerGlobal的addView方法, 在这里创建了ViewRootImpl的实例, 调用了setView方法,  在这里才开始真正的view绘制流程, 调用requestLayout, 判断是不是在主线程, 然后发起绘制请求,然后在performTraversals方法里开始执行onMeasure, onLayout, onDraw
+5. 确认view占用空间尺寸, onMeasure
+6. 确认摆放位置, onLayout
+7. 开始绘制, onDraw
+
+首先调用setContent给activity设置布局, setContent调用了getWindow\.setContentView(), 实际getWindow的对象是PhoneWindow, 所以调用的是PhoneWindow的setContentView, 第一次调用时, 因为contentParent是null, 调用installDecor , 此时如果decor是null, 则创建decor, decor是PhoneWindow的根布局,  也就是DecorView, 然后通过generateLayout方法, 生成contentParent, 其中会根据features来确定layoutResources, 然后把layout添加到decor中, 这个时候就有了android.R.id.content, 它是一个FrameLayout, 这时把setContent中的layout布局添加到这个FreamLayout中, 这个时候绘制还没开始, 真正的绘制是在onResume方法后, 在ActivityThread类的handleResumeActivity方法里, 在执行activity的onResume之后, 执行了wm.addView方法, 这个wm是来自Activity的getWindowManager里, 最终到window的getWindowManager方法里, 根据源码可知, Window的实际对象是WindowManagerImpl, 实际调用的是WindowManagerImpl的addView方法, 进而执行WindowManagerGlobal的addView方法, addView方法里创建了ViewRootImpl的实例, 然后调用了setView方法,&#x20;
 
 ## Flutter
 
