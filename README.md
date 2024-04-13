@@ -2,7 +2,7 @@
 
 ## 目录
 
-- [last update 2024.04.11](#last-update-20240411)
+- [last update 2024.04.13](#last-update-20240413)
   - [Java基础](#Java基础)
     - [Q: Java中 == 和 equals的区别是什么? ](#Q-Java中--和-equals的区别是什么-)
     - [Q: 以下代码的输出结果是什么, 为什么? ](#Q-以下代码的输出结果是什么-为什么-)
@@ -38,6 +38,10 @@
     - [Q: MVC MVP MVVM的区别](#Q-MVC-MVP-MVVM的区别)
     - [Q: AndroidThread是什么](#Q-AndroidThread是什么)
     - [Q: View的绘制流程](#Q-View的绘制流程)
+    - [Q: 为什么Android不允许层级嵌套过深, 但是Compose就没问题](#Q-为什么Android不允许层级嵌套过深-但是Compose就没问题)
+    - [Q:OKHttp的源码解析](#QOKHttp的源码解析)
+    - [Q:LiveData是什么](#QLiveData是什么)
+    - [Q:Lifecycle是什么](#QLifecycle是什么)
   - [Flutter](#Flutter)
     - [Q: Flutter的生命周期](#Q-Flutter的生命周期)
       - [StatelessWidget](#StatelessWidget)
@@ -63,7 +67,7 @@
 
 Android的面试题整理
 
-# last update 2024.04.11
+# last update 2024.04.13
 
 立个flag , 每天至少更新一道已经理解的面试题, 直到跳槽完成
 
@@ -296,10 +300,91 @@ View的绘制流程主要经过了几大步
 
    在布局转化为view对象前, AppCompatDelegateImpl中会调用ensureSubDecor方法, 这个方法在第一次调用时, 调用了createSubDecor, 而createSubDecor中又调用了window的setContentView方法, 根据activity的源码可知, getWindow实际是PhoneWindow对象, 而PhoneWindow的setContentView中, 第一次调用时, 因为contentParent是null, 调用installDecor, 然后调用generateDecor方法, 根据features来确定layoutResources, 生成DecorView, 此时有了android.R.id.content, 它的本质是一个FrameLayout, 这时把setContent中的layout布局添加到这个FreamLayout中, 这个时候绘制还没开始, 真正的绘制要在onResume方法走完之后, 在ActivityThread的handleResumeActivity方法里, 执行了activity的onResume之后, 执行了wm.addView方法, 这个wm实际是activity的getWindowmanager方法, 根据activity的源码可知, 实际是WindowManagerImpl的实例,  调用的它的addView, 而它的addView又进而执行了WindowManagerGlobal的addView方法, 在这里创建了ViewRootImpl的实例, 调用了setView方法,  在这里才开始真正的view绘制流程, 调用requestLayout, 判断是不是在主线程, 然后发起绘制请求,然后在performTraversals方法里开始执行onMeasure, onLayout, onDraw
 5. 确认view占用空间尺寸, onMeasure
+
+   用来测量view的宽和高, 在performMeasure方法中会调用view的measure方法, 对所有的子元素进行measure, measure过后可以通过getMeasuredWidth和getMeasuredHeight拿到view测量后的宽高
 6. 确认摆放位置, onLayout
+
+   用来确定view的四个顶点坐标和实际的view的宽和高, 在performLayout中调用layout方法, 确定布局四个点的位置, 可以通过getWidth和getHeight拿到view最终的宽高
 7. 开始绘制, onDraw
 
-首先调用setContent给activity设置布局, setContent调用了getWindow\.setContentView(), 实际getWindow的对象是PhoneWindow, 所以调用的是PhoneWindow的setContentView, 第一次调用时, 因为contentParent是null, 调用installDecor , 此时如果decor是null, 则创建decor, decor是PhoneWindow的根布局,  也就是DecorView, 然后通过generateLayout方法, 生成contentParent, 其中会根据features来确定layoutResources, 然后把layout添加到decor中, 这个时候就有了android.R.id.content, 它是一个FrameLayout, 这时把setContent中的layout布局添加到这个FreamLayout中, 这个时候绘制还没开始, 真正的绘制是在onResume方法后, 在ActivityThread类的handleResumeActivity方法里, 在执行activity的onResume之后, 执行了wm.addView方法, 这个wm是来自Activity的getWindowManager里, 最终到window的getWindowManager方法里, 根据源码可知, Window的实际对象是WindowManagerImpl, 实际调用的是WindowManagerImpl的addView方法, 进而执行WindowManagerGlobal的addView方法, addView方法里创建了ViewRootImpl的实例, 然后调用了setView方法,&#x20;
+   用来绘制view, 在performDraw中调用draw方法, 通过dispatchDraw实现传递过程.&#x20;
+
+### Q: 为什么Android不允许层级嵌套过深, 但是Compose就没问题
+
+A: 因为xml布局在测量过程中可能会发生多次, 嵌套会导致测量时间指数级增长,  Compose强制渲染1次, 就算是嵌套, 也只会是线性增长, 假设布局有2层, 其中父view会对每个子view做二次测量, 那么它的每个子view一共需要被测量两次, 如果到3层, 最内层的view被测量的次数就变成了4次, 以此类推, 而compose只允许测量一次, 不允许重复测量. 此外布局层级嵌套过深还会导致事件分发机制的责任链过长, 导致事件传递变慢.&#x20;
+
+### Q:OKHttp的源码解析
+
+A: OKHttp的源码解析可以先从发起一个请求开始看
+
+```kotlin
+//使用建造者模式创建一个OkHttpClient的对象, 设置超时时间, 拦截器等等
+var build: OkHttpClient = OkHttpClient.Builder()
+            .callTimeout(30, TimeUnit.SECONDS)
+            .build()
+//使用建造者模式创建一个Request对象
+var request: Request = Request.Builder()
+            .addHeader("", "")
+            .url("")
+            .get()
+            .build()
+//调用异步方法拿到Response
+build.newCall(request).enqueue(object : okhttp3.Callback {
+       override fun onFailure(call: okhttp3.Call, error: java.io.IOException) {
+       }
+
+       override fun onResponse(call: okhttp3.Call, response: okhttp3.Response) {
+       }
+})
+//调用同步方法拿到Response
+var response : Response = build.newCall(request).execute()           
+
+```
+
+由上可知几个对象, OkHttpClient, Request, Call, 首先是OkHttpClient, 它的作用是配置参数, 它的内部采用了建造者模式, 方便用户配置参数, 比如超时时间, 拦截器, cookie等等, 其次是Request. Requet它的作用也是配置参数, 只不过它配置的是url, 请求方法, header和body
+
+```java
+public final class Request {
+  final HttpUrl url;
+  final String method;
+  final Headers headers;
+  final @Nullable RequestBody body;
+  final Map<Class<?>, Object> tags;
+  ...
+  }
+```
+
+然后是Call, Call是一个接口, 通过源码可知, newCall的实际返回对象是RealCall.newRealCall,  然后调用同步或者异步方法, 获取Response, 在异步调用的过程中还有一个核心类是AsyncCall, 它是RealCall里的一个内部类, 它的本质是一个Runnable, 被调度器中的线程池执行, 然后还有Dispatcher调度器, 用来调度Call对象, 同时包含线程池与异步请求队列, 用来存放AsyncCall的对象, 然后就是Response, 里边包含了接口的响应数据和Callback回调, 包含了响应成功和失败的两个方法. 以上主要是对请求过程中核心类的作用. 然后是具体的源码流程分析
+
+同步请求:
+
+在newCall之后, 调用它的同步方法, 实际调用时RealCall的同步方法, 同步方法里首先判断是不是已经执行过了, 如果执行过直接抛出异常, 确保只执行一次, 然后开始请求超时计时, 开启请求监听, 然后通过调度器, 把Call加入到runningSyncCalls的队列里, 开始调用getResponseWithInterceptorChain方法, 获取response, 最终执行完毕时, 把call在队列里移除. 这是同步请求的执行流程
+
+异步请求:
+
+在newCall之后, 调用它的异步方法, 实际调用时RealCall的同步方法, 异步方法里首先判断是不是已经执行过了, 如果执行过直接抛出异常, 确保只执行一次, 然后开始请求超时计时, 开启请求监听, 新建一个AsyncCall对象, 通过调度器加入到readyAsyncCalls队列, 然后通过调度器的enqueue里的promoteAndExecute方法发起请求, 这个方法里首先判断是不是有请求正在执行, 如果没有, 加锁保证线程安全, 遍历readyAsyncCalls队列, 判断runningAsyncCalls队列里是不是超过了最大请求数64, 判断同域名的请求是不是超过了5条线程,判断都通过之后, 把请求从readyAsyncCalls中移除, 加入到executableCalls和runningAsyncCalls中,判断运行队列中的请求数量是不是大于0, 标记是否有请求正在执行, 遍历可执行队列, 调用线程池执行AsyncCall的execute方法, 调用getResponseWithInterceptorChain获取response, 通过Callback的onResponse或者onFailure把请求结果或者错误信息传递给调用者, 异步请求结束, 最后调用调度器的finished方法
+
+getResponseWithInterceptorChain方法是怎么拿到response的:
+
+不管是同步请求还是异步请求, 最终调用的都是getResponseWithInterceptorChain方法拿到response的, 这个方法内部首先构建了一个拦截器责任链对象RealInterceptorChain, 然后执行拦截器列表中的每一个拦截器的proceed方法, 返回response
+
+拦截器列表:
+
+拦截器可以根据执行顺序分为7类:&#x20;
+
+1. client.interceptors() 自定义拦截器, 在OkHttpClient构建时通过addInterceptor添加, 可以用于添加添加请求header, 日志拦截器
+2. RetryAndFollowUpInterceptor, 这个拦截器主要用于对连接初始化, 以及请求失败的充实, 重定向等连接跟踪工作
+3. BridgeInterceptor, 用于将用户构建的请求转换为服务器需要的请求,比如添加content-type, 添加user-agent, 将网络请求返回的响应结果转化为可用的响应, 比如移除Content-Length, 移除Content-Encoding
+4. CacheInterceptor, 用于处理缓存的相关逻辑,  在OkHttpClient构建时通过cache创建, 拦截器会结合请求新建一个缓存策略, 用来判断是用网络还是缓存创建response
+5. ConnectInterceptor, 用于负责建立连接
+6. client.networkInterceptors(), 自定义网络拦截器, 在OkHttpClient构建时通addNetworkInterceptor添加, 它和client.interceptors()的区别是, client.interceptors()一定会执行, 因为它是第一个拦截器, 而网络拦截器不一定会执行, 比如使用缓存的情况下, 或者发生了重定向时, 可能会执行多次.
+7. CallServerInterceptor, 网络的IO操作, 把请求头,请求体发送给服务器, 解析服务器返回的response
+
+拦截器通过责任链设计模式, 按顺序执行, 得到response之后, 再从下往上返回回去. 这样做的好处是达到充分解耦, 只需要把请求放到责任链上即可, 无需关心处理细节和请求的传递过程.&#x20;
+
+### Q:LiveData是什么
+
+### Q:Lifecycle是什么
 
 ## Flutter
 
