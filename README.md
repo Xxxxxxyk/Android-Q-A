@@ -2,7 +2,7 @@
 
 ## 目录
 
-- [last update 2024.04.13](#last-update-20240413)
+- [last update 2024.04.14](#last-update-20240414)
   - [Java基础](#Java基础)
     - [Q: Java中 == 和 equals的区别是什么? ](#Q-Java中--和-equals的区别是什么-)
     - [Q: 以下代码的输出结果是什么, 为什么? ](#Q-以下代码的输出结果是什么-为什么-)
@@ -11,6 +11,7 @@
     - [Q: 什么是堆, 什么是栈 , 有什么区别?](#Q-什么是堆-什么是栈--有什么区别)
     - [Q: 什么是内存泄漏, 内存溢出, 内存抖动](#Q-什么是内存泄漏-内存溢出-内存抖动)
     - [Q: GC的运行原理](#Q-GC的运行原理)
+    - [Q: 线程池](#Q-线程池)
   - [Android](#Android)
     - [Q: Activity, Fragment的生命周期都是什么?](#Q-Activity-Fragment的生命周期都是什么)
       - [在正常情况下:](#在正常情况下)
@@ -42,6 +43,12 @@
     - [Q:OKHttp的源码解析](#QOKHttp的源码解析)
     - [Q:LiveData是什么](#QLiveData是什么)
     - [Q:Lifecycle是什么](#QLifecycle是什么)
+    - [Q:Handler](#QHandler)
+    - [Q:线程消息机制和线程异步处理](#Q线程消息机制和线程异步处理)
+    - [Q:进程间通信](#Q进程间通信)
+    - [Q:性能优化内存优化](#Q性能优化内存优化)
+    - [Q:网络通信机制，对 Socket 通信、TCP/IP 和 HTTP 有一定理解](#Q网络通信机制对-Socket-通信TCPIP-和-HTTP-有一定理解)
+    - [Q:Retrofit](#QRetrofit)
   - [Flutter](#Flutter)
     - [Q: Flutter的生命周期](#Q-Flutter的生命周期)
       - [StatelessWidget](#StatelessWidget)
@@ -67,7 +74,7 @@
 
 Android的面试题整理
 
-# last update 2024.04.13
+# last update 2024.04.14
 
 立个flag , 每天至少更新一道已经理解的面试题, 直到跳槽完成
 
@@ -121,6 +128,10 @@ A: 内存泄漏是指因为对象创建后没有被销毁, 或者还有引用未
 ### Q: GC的运行原理
 
 A: GC采用分代收集算法, 将Java堆内存分为新生代 老年代 针对不同存活周期, 不同大小的对象采取不同的垃圾回收策略, 新生代包括Eden区和两个Survivor区, 新创建的对象首先在Eden区分配内存, 当Eden区空间不足时, 会触发Minor GC, 存活的对象进入Survivor区域, 将对象的年龄增加, 对象在Survivor区域内每熬过一次Minor GC, 年龄就加1, 到一定年龄后会被移动到老年代, Minor GC是发生在新生代的GC, Major GC或Full GC是发生在老年代的GC, 老年代通常采用标记 - 清除 - 整理算法, 首先标记所有存活的对象, 然后清理未被标记的对象, 此方法产生内存碎片, 然后通过整理, 移动对象消除内存碎片,.
+
+### Q: 线程池
+
+A: java的线程池是一种多线程的处理形式, 通过把任务添加到线程池队列中执行,  java提供了几种线程池的实现,FixedThreadPool, 固定大小线程, 核心线程数和最大线程数由我们指定, 始终不变, CachedThreadPool, 缓存线程池, 线程池根据需要创建线程,没有任务时回收线程, SingleThreadExecutor, 单线程, 只有一个线程, 保证任务按顺序执行等等 我们也可以自定义线程池的参数, 核心参数是拒绝策略, 当线程池的线程数达到最大线程数时的任务处理方式: 1. 丢弃任务并抛出异常, 2. 丢弃任务, 3. 丢弃队列最前边的任务, 重新提交当前任务, 4. 由提交任务的线程处理该任务,当前线程的任务都执行完毕后执行. 线程池的优点是降低资源消耗, 提高线程可管理性.
 
 ## Android
 
@@ -384,7 +395,63 @@ getResponseWithInterceptorChain方法是怎么拿到response的:
 
 ### Q:LiveData是什么
 
+A: LiveData通常用于在viewModel中通知View层数据变化, 实现数据驱动UI, 使用大致分为4步:&#x20;
+
+> 1.初始化一个livedata对象, 定义好被观察数据的类型
+> 2.定义并注册观察者对象, 更改被观察者的值
+> 3.通知给观察者
+> 4.观察者收到值后进行响应
+
+LiveData的原理可以从定义被观察者对象和更新对象讲解
+
+定义被观察者对象:
+
+观察者模式的构成里一般都有一个接口, livedata的接口是Observer, 它的内部有onChange方法, 在数据发生更改时调用, 通过ObserverWrapper进行了包装, livedata的核心方法是它的observe方法, 在observe中, 首先判断了是不是在主线程和观察者的生命周期是不是onDestroy, 通过生命周期组件与观察者对象新构建一个绑定生命周期的观察者对象LifecycleBoundObserver, 命名wrapper, 这一步主要是为了让观察者对象可以响应activity的生命周期, 在activity处于stop状态时, 不用通知数据变化, 然后检查一下wrapper是否已存在于观察者对象集合中, 如果存在返回在集合中的值, 证明已经注册了观察者, 如果不存在, 将wrapperadd到集合中，并返回null。然后开始判断返回值, 如果不为null, 检查生命周期是否与当前一致,如果不一致抛出异常, 如果是null, 通过addObserver添加到生命周期感知中。
+
+更新对象:
+
+livedata提供两种更新数据操作, setValue和postValue, setValue必须在主线程中调用,同步执行, postValue可以在子线程和主线程中调用, 异步执行, setValue中首先会判断是不是在主线程, 然后给version++, 最后通过dispatchingValue分发数据, 当观察者的version大于或等于livedata的version时, 证明已经接收过当前版本的数据, 不会在发送.postValue中则是通过handler把数据调度到主线程, 然后调用setValue来实现的
+
 ### Q:Lifecycle是什么
+
+A: Lifecycle可以让组件具备感知生命周期的能力, 内部通过观察者模式, 将生命周期感知对象和生命周期提供者解耦, 而不用通过回调的形式来通知给需要感知生命周期的对象. 它的内部lifecycle是一个抽象类, 内部有state和event构成, 代表了生命周期的状态和事件, 通过addObserver和removeObserver添加和移除生命周期观察者,Event和state的关系是, event代表着生命周期发生变化的点, state代表着生命周期所处的阶段, 如果我们自己的控件想要感知生命周期, 需要实现LifecycleObserver 的接口, 在生命周期持有者LifecycleOwner对象内部进行添加和移除观察者, 比如activity, fragment都是生命周期的持有者, 它们的内部都有一个方法叫getLifecycle, 它返回一个lifecycleRegistry的对象, 它是lifecycle的具体实现类,将最新的生命周期事件通过handleLifecycleEvent方法提供给观察者对象.handleLifecycleEvent是在生命周期的每个阶段被调用的.
+
+### Q:Handler
+
+A: Handler在大部分情况下, 用来做线程间通讯, 在android内部用来做事件处理, 它的核心类有Handler, Looper, MessageQueue和Message, 首先是Looper, Looper的核心方法是loop方法, 它是一个死循环, 不停的把Message从MessageQueue中发送到Handler中,Message中包含了实际的数据, MessageQueue是消息队列,存储了待处理的消息, handler与创建线程绑定, 在初始化时得到messagequeue, 所有的消息通过messagequeue发送给handler, 这也就是为什么handler能做线程通讯,  因为handler的发送者的线程不管在哪, 所有的消息都通过messagequeue发送到handler所在的线程, 所以实现了跨线程通讯.
+
+### Q:线程消息机制和线程异步处理
+
+A: 以下几种
+
+1. runOnUiThread 在主线程中处理数据
+2. Handler.post, 通过android回调到主线程处理
+3. 通过观察者模式, 例如EventBus,LiveData,广播等, 通过事件发送处理
+4. RxJava, 通过observerOn, 线程调度到主线程处理
+5. 通过AsyncTask 处理
+
+### Q:进程间通信
+
+A: 以下几种
+
+1. 通过Intent, 接收方通过IntentFilter进行接收
+2. 通过ContentProvider, 但只能访问特定规则数据
+3. 通过广播, 一个进程发送一个广播, 在另一个进程注册并接收
+4. 通过AIDL, 定义跨进程通信接口
+5. 通过Binder,&#x20;
+
+### Q:性能优化内存优化
+
+A:   1. 通过ProFiler或者leakcanary等工具进行内存泄漏优化
+
+1. 避免单例对象持有context的引用
+2. IO流关闭
+3. bitmap回收, 图片尺寸, 质量压缩
+4. 使用弱引用等等
+
+### Q:网络通信机制，对 Socket 通信、TCP/IP 和 HTTP 有一定理解
+
+### Q:Retrofit
 
 ## Flutter
 
