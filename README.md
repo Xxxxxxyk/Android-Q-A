@@ -2,7 +2,7 @@
 
 ## 目录
 
-- [last update 2024.04.17](#last-update-20240417)
+- [last update 2024.04.18](#last-update-20240418)
   - [Java基础](#Java基础)
     - [Q: Java中 == 和 equals的区别是什么? ](#Q-Java中--和-equals的区别是什么-)
     - [Q: 以下代码的输出结果是什么, 为什么? ](#Q-以下代码的输出结果是什么-为什么-)
@@ -61,6 +61,8 @@
       - [WidgetsBindingObserver](#WidgetsBindingObserver)
       - [AppLifecycleListener](#AppLifecycleListener)
     - [Q: Flutter与原生怎么通信](#Q-Flutter与原生怎么通信)
+    - [Flutter的绘制原理](#Flutter的绘制原理)
+    - [FLutter的手势识别原理](#FLutter的手势识别原理)
   - [鸿蒙](#鸿蒙)
     - [Q:Ability, page的生命周期都是什么](#QAbility-page的生命周期都是什么)
       - [Ability:](#Ability)
@@ -78,7 +80,7 @@
 
 Android的面试题整理
 
-# last update 2024.04.17
+# last update 2024.04.18
 
 立个flag , 每天至少更新一道已经理解的面试题, 直到跳槽完成
 
@@ -632,6 +634,10 @@ class FlutterNativePlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
     }
 }
 ```
+
+### Flutter的绘制原理
+
+### FLutter的手势识别原理
 
 ## 鸿蒙
 
