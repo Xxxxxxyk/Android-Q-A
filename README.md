@@ -2,7 +2,7 @@
 
 ## 目录
 
-- [last update 2024.04.18](#last-update-20240418)
+- [last update 2024.04.19](#last-update-20240419)
   - [Java基础](#Java基础)
     - [Q: Java中 == 和 equals的区别是什么? ](#Q-Java中--和-equals的区别是什么-)
     - [Q: 以下代码的输出结果是什么, 为什么? ](#Q-以下代码的输出结果是什么-为什么-)
@@ -12,7 +12,6 @@
     - [Q: 什么是内存泄漏, 内存溢出, 内存抖动](#Q-什么是内存泄漏-内存溢出-内存抖动)
     - [Q: GC的运行原理](#Q-GC的运行原理)
     - [Q: 线程池](#Q-线程池)
-    - [Q:线程锁](#Q线程锁)
   - [Android](#Android)
     - [Q: Activity, Fragment的生命周期都是什么?](#Q-Activity-Fragment的生命周期都是什么)
       - [在正常情况下:](#在正常情况下)
@@ -61,8 +60,8 @@
       - [WidgetsBindingObserver](#WidgetsBindingObserver)
       - [AppLifecycleListener](#AppLifecycleListener)
     - [Q: Flutter与原生怎么通信](#Q-Flutter与原生怎么通信)
-    - [Flutter的绘制原理](#Flutter的绘制原理)
-    - [FLutter的手势识别原理](#FLutter的手势识别原理)
+    - [Q:Flutter的绘制原理](#QFlutter的绘制原理)
+    - [Q:FLutter的手势识别原理](#QFLutter的手势识别原理)
   - [鸿蒙](#鸿蒙)
     - [Q:Ability, page的生命周期都是什么](#QAbility-page的生命周期都是什么)
       - [Ability:](#Ability)
@@ -77,10 +76,13 @@
     - [Q: 性能调优工具ProFiler的使用](#Q-性能调优工具ProFiler的使用)
     - [Q: HWUI呈现分析](#Q-HWUI呈现分析)
   - [算法](#算法)
+  - [面试做题](#面试做题)
+    - [Q: 同时有三个线程, 怎么确保线程依次执行](#Q-同时有三个线程-怎么确保线程依次执行)
+    - [Q:同时有三个线程,实现交替执行100次](#Q同时有三个线程实现交替执行100次)
 
 Android的面试题整理
 
-# last update 2024.04.18
+# last update 2024.04.19
 
 立个flag , 每天至少更新一道已经理解的面试题, 直到跳槽完成
 
@@ -138,10 +140,6 @@ A: GC采用分代收集算法, 将Java堆内存分为新生代 老年代 针对�
 ### Q: 线程池
 
 A: java的线程池是一种多线程的处理形式, 通过把任务添加到线程池队列中执行,  java提供了几种线程池的实现,FixedThreadPool, 固定大小线程, 核心线程数和最大线程数由我们指定, 始终不变, CachedThreadPool, 缓存线程池, 线程池根据需要创建线程,没有任务时回收线程, SingleThreadExecutor, 单线程, 只有一个线程, 保证任务按顺序执行等等 我们也可以自定义线程池的参数, 核心参数是拒绝策略, 当线程池的线程数达到最大线程数时的任务处理方式: 1. 丢弃任务并抛出异常, 2. 丢弃任务, 3. 丢弃队列最前边的任务, 重新提交当前任务, 4. 由提交任务的线程处理该任务,当前线程的任务都执行完毕后执行. 线程池的优点是降低资源消耗, 提高线程可管理性.
-
-### Q:线程锁
-
-A:
 
 ## Android
 
@@ -448,7 +446,7 @@ A: 以下几种
 2. 通过ContentProvider, 但只能访问特定规则数据
 3. 通过广播, 一个进程发送一个广播, 在另一个进程注册并接收
 4. 通过AIDL, 定义跨进程通信接口
-5. 通过Binder,&#x20;
+5. 通过Binder
 
 ### Q:性能优化内存优化
 
@@ -635,9 +633,13 @@ class FlutterNativePlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
 }
 ```
 
-### Flutter的绘制原理
+### Q:Flutter的绘制原理
 
-### FLutter的手势识别原理
+A: Flutter的渲染主要通过三棵树来实现, 即Widget树, Element树和RenderObject树组成, Widget树是Flutter中用描述UI界面的一种数据结构, 它由一系列的Widget节点构成, Widget节点是不可变的, 它的配置信息一旦创建就不会发生变化,  这就使得Widget树可以在不同的时间节点上被重复使用. 每个Widget节点都有一个build方法, 它返回一个Element节点, 用于构建Element树. Element树是Widget树的实例, 用来表示Widget树在运行时的一种数据结构, 它由Element节点组成, 每个Element节点包含了一个Widget节点和与它对应的状态信息, Element节点是可变的, 当Widget节点需要更新时, Flutter会在Element树上进行对应操作, 比如添加删除等, 来反映出Widget树的变化, 然后是RenderObject树, RenderObject树是用来描述UI布局和绘制的一种数据结构, 每个RenderObject节点包含了一个用于描述UI界面和绘制的RenderObject对象, 这些对象根据Widget树和Element树信息进行布局和绘制, 最终在屏幕上显示.RenderObject树是可变的, 当Element节点需要更新时, Flutter会在RenderObject树上进行操作. 以反映出UI界面的变化
+
+### Q:FLutter的手势识别原理
+
+A: 手势识别原理可以分为三个方面, 底层指针事件, 手势识别, 指针事件处理流程, 底层指针事件, 当触摸在屏幕时, 产生PointerEvent来包装这个事件, 形成事件流, Flutter的手势识别本质上是监听这个事件流, 内部通过RawGestureDetector 判断和跟踪手势来做出响应的反应. 手势识别, GestureRecognizer是手势识别的基类, 他定义了手势识别的基础方法和流程,Flutter提供一些常用的手势识别器, 他们都是继承GestureRecognizer来实现的, 当手势被识别器识别后, GestureRecongnizer会触发对应手势的回调, 如果它的子树上存在多个识别同一手势的识别器的话, 它会选取其中的一个来响应.指针事件处理流程, 产生PointerEvent事件后, 首先是命中测试, 将PointerDownEvent传给GestureBinding, GestureBinding 是Flutter的手势系统入口, 负责管理整个手势识别体系, GestureBinding沿着渲染树, 从叶节点向根节点遍历, 对每个节点进行命中测试, 测试通过表示该组件需要处理点击事件, 然后加入到HitTestResult列表中. 然后是事件分发, 命中测试完毕后, GestureBinding会遍历HitTestResult列表, 调用每一个对象的事件处理方法handleEvent来处理事件, 后续产生的事件直到抬起后也会按照HitTestResult列表进行分发, 直到分发完毕后, 清空HitTestResult列表
 
 ## 鸿蒙
 
@@ -698,3 +700,220 @@ A: 通过ProFiler的CPU Profiler可以查看哪个线程消耗的时间最多, �
 A: HWUI呈现分析可以查看页面绘制性能,它是由绿色, 黄色, 红色的柱状图组成的,绿色：表示帧的渲染在16毫秒内完成，这是60帧每秒的标准。黄色：表示帧的渲染超过了16毫秒，但仍在可接受的范围内。红色：表示帧的渲染时间过长，可能会导致界面卡顿。可以通过查看柱状图分析布局, 比如嵌套层级过深, bitmap使用优化, 减少布局更新等等
 
 ## 算法
+
+## 面试做题
+
+### Q: 同时有三个线程, 怎么确保线程依次执行
+
+A1:
+
+```kotlin
+//使用handler,每个线程执行完毕后再开始下个线程
+        val handler = Handler(Looper.getMainLooper(), Handler.Callback {
+            binding.tvText.setText(it.obj.toString());
+            when (it.what) {
+                1 -> {
+                    thread1.start()
+                }
+
+                2 -> {
+                    thread2.start()
+                }
+            }
+            return@Callback true
+        })
+
+        val thread = Thread {
+            val message = Message()
+            message.obj = "123580"
+            message.what = 1
+            handler.sendMessage(message)
+        }.start()
+
+        thread1 = Thread {
+            val message = Message()
+            message.obj = "246810"
+            message.what = 2
+            handler.sendMessageDelayed(message, 3000)
+        }
+
+        thread2 = Thread {
+            val message = Message()
+            message.obj = "我变成英文了哈"
+            message.what = 3
+            handler.sendMessageDelayed(message, 3000)
+        }
+
+```
+
+A2:
+
+```kotlin
+//使用Volatile, 保证变量的更改对所有线程可见, 一个变量控制
+        @Volatile
+        var x: Int = 0
+        
+        var thread = Thread {
+            binding.tvText.setText("13579");
+        }
+
+        thread1 = Thread {
+            while (x != 1) {
+
+            }
+            runOnUiThread {
+                binding.tvText.setText("246810")
+            }
+        }
+        thread2 = Thread {
+            while (x != 2) {
+
+            }
+            runOnUiThread {
+                binding.tvText.setText("我变成英文了哈");
+            }
+        }
+
+        thread.start()
+        thread1.start()
+        thread2.start()
+
+        Handler().postDelayed(Runnable { x = 1 }, 3000)
+        Handler().postDelayed(Runnable { x = 2 }, 6000)
+
+```
+
+A3:
+
+```kotlin
+//使用锁
+fun printString(text: String) {
+    print(text)
+}
+
+fun main() {
+    val c0 = CountDownLatch(0)
+    val c1 = CountDownLatch(1)
+    val c2 = CountDownLatch(1)
+    Thread {
+        c0.await()
+        for (x in 0..10) {
+            printString("A")
+        }
+        c1.countDown()
+    }.start()
+
+    Thread {
+        c1.await()
+        for (x in 0..10) {
+            printString("B")
+        }
+        c2.countDown()
+    }.start()
+
+    Thread {
+        c2.await()
+        for (x in 0..10) {
+            printString("C")
+        }
+    }.start()
+
+}
+
+```
+
+### Q:同时有三个线程,实现交替执行100次
+
+A1:
+
+```kotlin
+var times: Int = 100
+
+@Volatile
+var count: Int = 1
+
+
+fun main() {
+    var obj: Object = Object()
+
+    Thread {
+        synchronized(obj) {
+            while (count <= times) {
+                while (count % 3 != 1) {
+                    obj.wait()
+                }
+                print("A")
+                count++
+                obj.notifyAll()
+            }
+        }
+    }.start()
+
+    Thread {
+        synchronized(obj) {
+            while (count <= times) {
+                while (count % 3 != 2) {
+                    obj.wait()
+                }
+                print("B")
+                count++
+                obj.notifyAll()
+            }
+        }
+    }.start()
+
+    Thread {
+        synchronized(obj) {
+            while (count <= times) {
+                while (count % 3 != 0) {
+                    obj.wait()
+                }
+                print("C")
+                count++
+                obj.notifyAll()
+            }
+        }
+    }.start()
+
+}
+```
+
+A2:
+
+```kotlin
+fun main() {
+    var s1: Semaphore = Semaphore(1)
+    var s2: Semaphore = Semaphore(0)
+    var s3: Semaphore = Semaphore(0)
+
+    Thread {
+        for (x in 0..100) {
+            s1.acquire()
+            print("A")
+            times--
+            s2.release()
+        }
+    }.start()
+    Thread {
+        for (x in 0..100) {
+            s2.acquire()
+            print("B")
+            times--
+            s3.release()
+        }
+    }.start()
+    Thread {
+        for (x in 0..100) {
+            s3.acquire()
+            print("C")
+            times--
+            s1.release()
+        }
+    }.start()
+}
+```
+
+A3:
+
+```kotlin
+```
