@@ -2,7 +2,7 @@
 
 ## 目录
 
-- [last update 2024.04.19](#last-update-20240419)
+- [last update 2024.04.25](#last-update-20240425)
   - [Java基础](#Java基础)
     - [Q: Java中 == 和 equals的区别是什么? ](#Q-Java中--和-equals的区别是什么-)
     - [Q: 以下代码的输出结果是什么, 为什么? ](#Q-以下代码的输出结果是什么-为什么-)
@@ -12,6 +12,9 @@
     - [Q: 什么是内存泄漏, 内存溢出, 内存抖动](#Q-什么是内存泄漏-内存溢出-内存抖动)
     - [Q: GC的运行原理](#Q-GC的运行原理)
     - [Q: 线程池](#Q-线程池)
+    - [Q:线程池的执行流程](#Q线程池的执行流程)
+    - [Q: 内部类为什么会持有外部类的引用](#Q-内部类为什么会持有外部类的引用)
+    - [Q: Thread的join方法是做什么用的](#Q-Thread的join方法是做什么用的)
   - [Android](#Android)
     - [Q: Activity, Fragment的生命周期都是什么?](#Q-Activity-Fragment的生命周期都是什么)
       - [在正常情况下:](#在正常情况下)
@@ -37,6 +40,7 @@
     - [Q: Service的生命周期和启动模式](#Q-Service的生命周期和启动模式)
     - [Q: Android系统结构的原理和各版本的特性及适配](#Q-Android系统结构的原理和各版本的特性及适配)
     - [Q: MVC MVP MVVM的区别](#Q-MVC-MVP-MVVM的区别)
+    - [Q: MVI](#Q-MVI)
     - [Q: AndroidThread是什么](#Q-AndroidThread是什么)
     - [Q: View的绘制流程](#Q-View的绘制流程)
     - [Q: 为什么Android不允许层级嵌套过深, 但是Compose就没问题](#Q-为什么Android不允许层级嵌套过深-但是Compose就没问题)
@@ -44,6 +48,8 @@
     - [Q:LiveData是什么](#QLiveData是什么)
     - [Q:Lifecycle是什么](#QLifecycle是什么)
     - [Q:Handler](#QHandler)
+    - [Q:Handler为什么会造成内存泄漏](#QHandler为什么会造成内存泄漏)
+    - [Q:为什么Handler不会导致ANR](#Q为什么Handler不会导致ANR)
     - [Q:线程消息机制和线程异步处理](#Q线程消息机制和线程异步处理)
     - [Q:进程间通信](#Q进程间通信)
     - [Q:性能优化内存优化](#Q性能优化内存优化)
@@ -51,7 +57,9 @@
     - [Q:Glide](#QGlide)
     - [Q:一张图片占用的内存空间怎么计算](#Q一张图片占用的内存空间怎么计算)
     - [Q:不使用三方库怎么减小图片占用体积](#Q不使用三方库怎么减小图片占用体积)
+    - [Q: Retrofit的源码解析](#Q-Retrofit的源码解析)
   - [Kotlin](#Kotlin)
+    - [协程](#协程)
   - [Flutter](#Flutter)
     - [Q: Flutter的生命周期](#Q-Flutter的生命周期)
       - [StatelessWidget](#StatelessWidget)
@@ -62,6 +70,8 @@
     - [Q: Flutter与原生怎么通信](#Q-Flutter与原生怎么通信)
     - [Q:Flutter的绘制原理](#QFlutter的绘制原理)
     - [Q:FLutter的手势识别原理](#QFLutter的手势识别原理)
+    - [Q: Getx](#Q-Getx)
+    - [Q: RiverPod](#Q-RiverPod)
   - [鸿蒙](#鸿蒙)
     - [Q:Ability, page的生命周期都是什么](#QAbility-page的生命周期都是什么)
       - [Ability:](#Ability)
@@ -72,6 +82,7 @@
     - [Q: 什么是建造者模式](#Q-什么是建造者模式)
     - [Q: 什么是观察者模式](#Q-什么是观察者模式)
     - [Q: 什么是责任链设计模式](#Q-什么是责任链设计模式)
+    - [Q: 什么是动态代理](#Q-什么是动态代理)
   - [性能调优](#性能调优)
     - [Q: 性能调优工具ProFiler的使用](#Q-性能调优工具ProFiler的使用)
     - [Q: HWUI呈现分析](#Q-HWUI呈现分析)
@@ -80,9 +91,7 @@
     - [Q: 同时有三个线程, 怎么确保线程依次执行](#Q-同时有三个线程-怎么确保线程依次执行)
     - [Q:同时有三个线程,实现交替执行100次](#Q同时有三个线程实现交替执行100次)
 
-Android的面试题整理
-
-# last update 2024.04.19
+# last update 2024.04.25
 
 立个flag , 每天至少更新一道已经理解的面试题, 直到跳槽完成
 
@@ -140,6 +149,18 @@ A: GC采用分代收集算法, 将Java堆内存分为新生代 老年代 针对�
 ### Q: 线程池
 
 A: java的线程池是一种多线程的处理形式, 通过把任务添加到线程池队列中执行,  java提供了几种线程池的实现,FixedThreadPool, 固定大小线程, 核心线程数和最大线程数由我们指定, 始终不变, CachedThreadPool, 缓存线程池, 线程池根据需要创建线程,没有任务时回收线程, SingleThreadExecutor, 单线程, 只有一个线程, 保证任务按顺序执行等等 我们也可以自定义线程池的参数, 核心参数是拒绝策略, 当线程池的线程数达到最大线程数时的任务处理方式: 1. 丢弃任务并抛出异常, 2. 丢弃任务, 3. 丢弃队列最前边的任务, 重新提交当前任务, 4. 由提交任务的线程处理该任务,当前线程的任务都执行完毕后执行. 线程池的优点是降低资源消耗, 提高线程可管理性.
+
+### Q:线程池的执行流程
+
+A: 在提交任务后, 首先判断是否存在空闲线程, 如果存在, 则分配, 不存在, 则判断是否已经达到核心线程数, 未达到则创建核心线程, 已达到则判断工作队列是否已满, 如果未满则放入工作队列等待, 如果已满则判断是否已达到最大线程数, 如果未达到则创建非核心线程, 如果已达到则执行拒绝策略.
+
+### Q: 内部类为什么会持有外部类的引用
+
+A: 因为内部类和外部类编译完成后会生成不同的class文件, 内部类的构造函数种会传入外部类的实例, 然后通过this\$0访问外部成员, 不然也没办法调用外部类的方法等等
+
+### Q: Thread的join方法是做什么用的
+
+A: 等待线程执行结束之后再继续执行当前线程.
 
 ## Android
 
@@ -298,6 +319,10 @@ MVP model view和presenter, view抽出和用户交互的接口, 逻辑写在pres
 
 MVVM model view和viewmodel, viewmodel中与view双向绑定, 通过databinding, 在数据变化时驱动UI更新. &#x20;
 
+### Q: MVI
+
+A:
+
 ### Q: AndroidThread是什么
 
 ### Q: View的绘制流程
@@ -426,7 +451,19 @@ A: Lifecycle可以让组件具备感知生命周期的能力, 内部通过观察
 
 ### Q:Handler
 
-A: Handler在大部分情况下, 用来做线程间通讯, 在android内部用来做事件处理, 它的核心类有Handler, Looper, MessageQueue和Message, 首先是Looper, Looper的核心方法是loop方法, 它是一个死循环, 不停的把Message从MessageQueue中发送到Handler中,Message中包含了实际的数据, MessageQueue是消息队列,存储了待处理的消息, handler与创建线程绑定, 在初始化时得到messagequeue, 所有的消息通过messagequeue发送给handler, 这也就是为什么handler能做线程通讯,  因为handler的发送者的线程不管在哪, 所有的消息都通过messagequeue发送到handler所在的线程, 所以实现了跨线程通讯.
+A: Handler在大部分情况下, 用来做线程间通讯, 在android内部用来做事件处理, 它的核心类有Handler, Looper, MessageQueue和Message, 它的构成很像电梯, 可以理解为MessageQueue是传送带, Looper是传送带的动力来源, Message则是电梯上的人, Handler则是人上下电梯的过程, 首先通过handler.post/send方法, 把消息放到队列中, 然后Loop通过一个死循环来提供动力, 把Message通过MessageQueue发送到Handler的dispatch中进行处理, 当没有消息时, 则阻塞队列, 等消息队列调用enqueueMessage时通知队列, 解除阻塞, handler与创建线程绑定, 在初始化时得到messagequeue, 所有的消息通过messagequeue发送给handler, 这也就是为什么handler能做线程通讯,  因为handler的发送者的线程不管在哪, 所有的消息都通过messagequeue发送到handler所在的线程, 所以实现了跨线程通讯.
+
+### Q:Handler为什么会造成内存泄漏
+
+A: 原因1: 延迟消息, 当Activity关闭后, 延迟消息还未发出, 主线程的MessageQueue持有消息引用, 而这个消息持有Handler的引用, 而Handler作为匿名内部类又持有了Activity的引用, 主线程不会被回收, 所以这个引用链导致Activity也无法被回收, 导致出现内存泄漏
+
+原因2: 子线程不回收, 子线程通过Handler更新UI, 子线程持有了Activity的引用, 运行中的子线程不会被回收, 所以导致Activity也不会被回收
+
+解决方案: 改写为静态内部类, 在activity onDestory时对handler进行回收,移除所有消息.
+
+### Q:为什么Handler不会导致ANR
+
+A: ANR和Handler的死循环不是一个概念, ANR是任务未在规定时间完成, Handler的死循环是在没事件处理时是阻塞状态. 等待后边有事件时再唤醒
 
 ### Q:线程消息机制和线程异步处理
 
@@ -473,7 +510,11 @@ A: 长度 \* 宽度 \* 每个像素占用空间 像素占用空间根据不同�
 
 A: 1. 设置Bitmap.Option.isJustDecodeBounds为true, 只读取图片的宽高, 而不加载图片, 根据尺寸做等比压缩. 2. 设置图片采样率为ARGB565, 减小占用内存 3. 如果在列表里的话, 滑动过程中暂停加载, 滑动结束再加载
 
+### Q: Retrofit的源码解析
+
 ## Kotlin
+
+### 协程
 
 ## Flutter
 
@@ -641,6 +682,14 @@ A: Flutter的渲染主要通过三棵树来实现, 即Widget树, Element树和Re
 
 A: 手势识别原理可以分为三个方面, 底层指针事件, 手势识别, 指针事件处理流程, 底层指针事件, 当触摸在屏幕时, 产生PointerEvent来包装这个事件, 形成事件流, Flutter的手势识别本质上是监听这个事件流, 内部通过RawGestureDetector 判断和跟踪手势来做出响应的反应. 手势识别, GestureRecognizer是手势识别的基类, 他定义了手势识别的基础方法和流程,Flutter提供一些常用的手势识别器, 他们都是继承GestureRecognizer来实现的, 当手势被识别器识别后, GestureRecongnizer会触发对应手势的回调, 如果它的子树上存在多个识别同一手势的识别器的话, 它会选取其中的一个来响应.指针事件处理流程, 产生PointerEvent事件后, 首先是命中测试, 将PointerDownEvent传给GestureBinding, GestureBinding 是Flutter的手势系统入口, 负责管理整个手势识别体系, GestureBinding沿着渲染树, 从叶节点向根节点遍历, 对每个节点进行命中测试, 测试通过表示该组件需要处理点击事件, 然后加入到HitTestResult列表中. 然后是事件分发, 命中测试完毕后, GestureBinding会遍历HitTestResult列表, 调用每一个对象的事件处理方法handleEvent来处理事件, 后续产生的事件直到抬起后也会按照HitTestResult列表进行分发, 直到分发完毕后, 清空HitTestResult列表
 
+### Q: Getx
+
+A:
+
+### Q: RiverPod
+
+A:
+
 ## 鸿蒙
 
 ### Q:Ability, page的生命周期都是什么
@@ -688,6 +737,10 @@ A: 观察者设计模式
 A: 责任链设计模式
 
 责任链设计模式很像击鼓传花的游戏, 它的核心是将事件一层一层传递下去, 每个节点都需要参与决策或者处理事件, 直到某一个节点消耗了这个事件, 它的优点是降低耦合度, 可以灵活的删除和增加链上的对象, 但是如果链过长时, 会影响性能,  因为每一个节点都需要逻辑判断, 所以android上要求避免布局嵌套过深.&#x20;
+
+### Q: 什么是动态代理
+
+A:
 
 ## 性能调优
 
